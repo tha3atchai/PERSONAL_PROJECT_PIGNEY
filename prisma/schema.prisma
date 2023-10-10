@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  firstName String @map("first_name")
+  lastName String @map("last_name")
+  email String? @unique
+  password String
+  mobile String? @unique
+  profileImage String? @map("profile_image")
+  requesters Friend[] @relation("requester")
+  receivers Friend[] @relation("receiver")
+  goalRequesters PiggyGoal[] @relation("goalRequester")
+  goalReceivers PiggyGoal[] @relation("goalReceiver")
+  piggys PiggyGoal[]
+  records Record[]
+}
+
+model PiggyGoal {
+  id Int @id @default(autoincrement())
+  status FriendStatus
+  dateTime DateTime @default(now()) @map("date_time")
+  goalRequesterId Int @map("goal_requester_id")
+  goalRequester User @relation("goalRequester", fields: [goalRequesterId], references: [id])
+  goalReceiverId Int @map("goal_receiver_id")  
+  goalReceiver User @relation("goalReceiver", fields: [goalReceiverId], references: [id])
+  userId Int @map("user_id") 
+  user User @relation(fields: [userId], references: [id])
+  piggyId Int @map("piggy_id")
+  piggy Piggy @relation(fields: [piggyId], references: [id])
+
+  @@map("piggy_goal")
+}
+
+model Piggy {
+  id Int @id @default(autoincrement())
+  goalName String @map("goal_name")
+  endDate DateTime? @db.Date @map("end_date")
+  goalAmount String @map("goal_amount")
+  note String?
+  goalImage String? @map("goal_image")
+  status GoalStatus
+  ownerId Int @map("owner_id")
+  currentAmount Float @default(0) @map("current_amount")
+  createdAt DateTime @default(now()) @map("created_at")
+  users PiggyGoal[]
+  records Record[]
+}
+
+model Friend {
+  id Int @id @default(autoincrement())
+  status FriendStatus
+  dateTime DateTime @default(now()) @map("date_time")
+  requesterId Int @map("requester_id")
+  requester User @relation("requester", fields: [requesterId], references: [id])
+  receiverId Int @map("receiver_id")
+  receiver User @relation("receiver", fields: [receiverId], references: [id])
+}
+
+model Record {
+  id Int @id @default(autoincrement())
+  createdAt DateTime @default(now()) @map("created_at")
+  fund Float @default(0) 
+  status RecordStatus
+  note String?
+  userId Int @map("user_id") 
+  user User @relation(fields: [userId], references: [id])
+  piggyId Int @map("piggy_id")
+  piggy Piggy @relation(fields: [piggyId], references: [id])
+}
+
+enum FriendStatus{
+  ACCEPTED
+  PENDING
+}
+
+enum GoalStatus{
+  INPROCESS
+  COMPLETE
+}
+
+enum RecordStatus{
+  ADD
+  WITHDRAW
+}
