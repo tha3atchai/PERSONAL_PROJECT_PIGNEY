@@ -8,6 +8,8 @@ const notFoundMiddleware = require("./middlewares/not-found");
 const errorMiddleware = require("./middlewares/error");
 
 const authRoute = require("./routes/auth-route");
+const piggygoalsRoute = require("./routes/piggygoals-route");
+const userRoute = require("./routes/user-route");
 
 const app = express();
 
@@ -18,6 +20,8 @@ app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 
 app.use("/auth", authRoute);
+app.use("/piggygoals", piggygoalsRoute);
+app.use("/user", userRoute);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);
