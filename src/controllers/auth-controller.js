@@ -15,7 +15,17 @@ const registerUser = async(req, res, next) => {
         const payload = { userId: user.id};
         const token = jwt.sign(payload, process.env.JWT_SECRET_KEY || "secret", {expiresIn: process.env.JWT_EXPIRE});
         delete user.password;
-        res.status(201).json({token , user});
+        const myGoal = await prisma.piggy.findMany({
+            where: {
+                ownerId: user.id,
+            },
+        });
+        const myRecord = await prisma.record.findMany({
+            where: {
+                userId: user.id,
+            },
+        });
+        res.status(201).json({token , user, myGoal, myRecord});
     }catch(err) {
         next(err);
     };
@@ -40,14 +50,23 @@ const loginUser = async(req, res, next) => {
         };
         const token = jwt.sign(payload, process.env.JWT_SECRET_KEY || "secret", {expiresIn: process.env.JWT_EXPIRE});
         delete user.password
-        res.status(201).json({token, user});
+        const myGoal = await prisma.piggy.findMany({
+            where: {
+                ownerId: user.id,
+            },
+        });
+        const myRecord = await prisma.record.findMany({
+            where: {
+                userId: user.id,
+            },
+        });
+        res.status(201).json({token, user, myGoal, myRecord});
     }catch(err) {
         next(err);
     };
 };
 
 const getMe = (req, res) => {
-    console.log(req.user);
     res.status(200).json({user: req.user});
 };
 
