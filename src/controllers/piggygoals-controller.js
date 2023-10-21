@@ -1,15 +1,7 @@
 const prisma = require("../models/prisma");
+const fs = require("fs/promises");
 const { upload } = require("../utils/cloudinary-service");
 const createError = require("../utils/createError");
-
-// const getGoal = async(req, res, next) => {
-//     try {
-//         const allGoals = await prisma.piggy.findMany();
-//         res.status(200).json({goals: allGoals});
-//     }catch(err) {
-//         next(err);
-//     };
-// };
 
 const getMyGoal = async(req, res, next) => {
     try {
@@ -35,6 +27,32 @@ const getMyGoalRecord = async(req, res, next) => {
             },
         });
         res.status(200).json({myRecord});
+    }catch(err) {
+        next(err);
+    };
+};
+
+const getPiggyAndRecord = async(req, res, next) => {
+    try {
+        const piggyAndRecord = await prisma.record.findMany({
+            include: {
+                piggy: true,
+            },
+        });
+        res.status(200).json({piggyAndRecord});
+    }catch(err) {
+        next(err);
+    };
+};
+
+const getRecordAndUser = async(req, res, next) => {
+    try {
+        const recordAndUser = await prisma.record.findMany({
+            include: {
+            user: true, 
+            },
+        }); 
+        res.status(200).json({recordAndUser});
     }catch(err) {
         next(err);
     };
@@ -71,7 +89,11 @@ const createGoal = async(req, res, next) => {
         };
     }catch(err) {
         next(err);
-    };
+    } finally {
+    if (req.files.goalImage) {
+      fs.unlink(req.files.goalImage[0].path);
+    }
+  };
 };
 
 const addFunds = async(req, res, next) => {
@@ -138,6 +160,94 @@ const withDraw = async(req, res, next) => {
     };
 };
 
+const updateGoal = async(req, res, next) => {
+    try {
+        const {goalName, endDate, goalAmount, note, piggyId} = req.body;
+        const newEndDate = new Date(endDate);
+        await prisma.piggy.update({
+            data: {
+                goalName,
+                endDate: newEndDate,
+                goalAmount,
+                note,
+            },
+            where: {
+                id: +piggyId,
+            },
+        });
+        res.status(200).json({message: "update goal"});
+    }catch(err) {
+        next(err);
+    };
+};
+
+const deleteGoal = async(req, res, next) => {
+    try {
+        const piggyId = +req.params.piggyId;
+        await prisma.record.deleteMany({
+            where: {
+                piggyId,
+            },
+        });
+        await prisma.piggy.delete({
+            where: {
+                id: piggyId,
+            },
+        });
+        res.status(200).json({message: "delete fn"});
+    }catch(err) {
+        next(err);
+    };
+};
+
+const updateGoalImage = async(req, res, next) => {
+    try {
+        const piggyId = req.params.piggyId;
+        if (!req.files) {
+          return next(createError('profile image or cover image is required'));
+        }
+    
+        const response = {};
+    
+        if (req.files.goalImage) {
+          const url = await upload(req.files.goalImage[0].path);
+          response.goalImage = url;
+          await prisma.piggy.update({
+            data: {
+              goalImage: url
+            },
+            where: {
+              id: +piggyId,
+            }
+          });
+        }
+
+        res.status(200).json(response);
+    } catch (err) {
+      next(err);
+    } finally {
+      if (req.files.goalImage) {
+        fs.unlink(req.files.goalImage[0].path);
+      }
+    };
+};
+
+const goalSuccess = async(req, res, next) => {
+    try {
+        const piggyId = +req.params.piggyId;
+        const result = await prisma.piggy.update({
+            data: {
+                status: "COMPLETE"
+            },
+            where: {
+                id: piggyId,
+            },
+        });
+        res.status(200).json({result});
+    }catch(err) {
+        next(err);
+    }
+};
 
 module.exports = {
     createGoal,
@@ -145,4 +255,10 @@ module.exports = {
     addFunds,
     getMyGoalRecord,
     withDraw,
+    updateGoal,
+    deleteGoal,
+    getPiggyAndRecord,
+    getRecordAndUser,
+    updateGoalImage,
+    goalSuccess,
 };

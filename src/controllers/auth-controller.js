@@ -25,7 +25,22 @@ const registerUser = async(req, res, next) => {
                 userId: user.id,
             },
         });
-        res.status(201).json({token , user, myGoal, myRecord});
+        const piggyAndRecord = await prisma.piggy.findMany({
+        include: {
+            records: {
+            select: {
+                fund: true,
+                status: true,
+            },
+            },
+        },
+        });
+        const recordAndUser = await prisma.record.findMany({
+            include: {
+            user: true, 
+            },
+        }); 
+        res.status(201).json({token , user, myGoal, myRecord, piggyAndRecord, recordAndUser});
     }catch(err) {
         next(err);
     };
@@ -60,7 +75,17 @@ const loginUser = async(req, res, next) => {
                 userId: user.id,
             },
         });
-        res.status(201).json({token, user, myGoal, myRecord});
+        const piggyAndRecord = await prisma.record.findMany({
+        include: {
+            piggy: true,
+        },
+        });
+        const recordAndUser = await prisma.record.findMany({
+            include: {
+            user: true, 
+            },
+        }); 
+        res.status(201).json({token , user, myGoal, myRecord, piggyAndRecord, recordAndUser});
     }catch(err) {
         next(err);
     };

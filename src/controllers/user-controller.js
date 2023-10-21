@@ -34,6 +34,17 @@ const updateProfile = async(req, res, next) => {
     };
 };
 
+// await prisma.piggy.findMany({
+//   include: {
+//     records: {
+//       select: {
+//         fund: true,
+//         status: true,
+//       },
+//     },
+//   },
+// });
+
 module.exports = {
     updateProfile,
 };
